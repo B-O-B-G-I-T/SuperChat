@@ -20,10 +20,17 @@ class Utils {
     }
   }
 
-  static Future<List<UserModel>> getUsers(String currentUserId) async {
-    var collection = FirebaseFirestore.instance.collection('users');
-    var querySnapshot = await collection.where('id', isNotEqualTo: currentUserId).get();
+static Future<List<UserModel>> getUsers(String currentUserId) async {
+  var collection = FirebaseFirestore.instance.collection('users');
+  var querySnapshot = await collection.where('id', isNotEqualTo: currentUserId).get();
 
-    return querySnapshot.docs.map((doc) => UserModel.fromFirestore(doc.data())).toList();
-  }
+  var unsortedList = querySnapshot.docs.map((doc) => UserModel.fromFirestore(doc.data())).toList();
+
+
+  var sortedList = unsortedList..sort((a, b) => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
+
+  return sortedList;
+}
+
+
 }

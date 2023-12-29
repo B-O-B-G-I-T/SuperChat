@@ -1,9 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:superchat/pages/message_page/data/message_model.dart';
 import 'package:superchat/pages/message_page/domain/bloc/message_bloc.dart';
+import 'package:superchat/pages/message_page/presentation/widgets/message_button_widget.dart';
+import 'package:superchat/pages/message_page/presentation/widgets/message_input_widget.dart';
+import 'package:superchat/pages/message_page/presentation/widgets/message_list_widget.dart';
 
 class MessagePage extends StatelessWidget {
   final String id;
@@ -42,9 +43,7 @@ class _MessagePageContentState extends State<MessagePageContent> {
   @override
   void initState() {
     super.initState();
-    Timer(Duration(milliseconds: 500), () {
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-    });
+
   }
 
   @override
@@ -65,7 +64,12 @@ class _MessagePageContentState extends State<MessagePageContent> {
                 } else if (state is MessageErrorState) {
                   return Center(child: Text(state.errorMessage));
                 } else if (state is MessageLoadedState) {
-                  return buildMessageList(state.messages);
+                  // return buildMessageList(state.messages);
+                  return MessageList(
+                    messages: state.messages,
+                    id: widget.id,
+                    displayName: widget.displayName,
+                  );
                 } else {
                   return const Center(child: Text('Unknown state'));
                 }
@@ -76,26 +80,10 @@ class _MessagePageContentState extends State<MessagePageContent> {
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter your message...',
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
+                MessageInput(controller: _messageController),
+                MessageButton(
                   onPressed: () {
-                    final bloc = context.read<MessageBloc>();
-                    bloc.add(SendMessageEvent(
-                      receiver: widget.id,
-                      content: _messageController.text,
-                    ));
-                    _messageController.clear();
+                    _sendMessage();
                   },
                 ),
               ],
@@ -106,45 +94,13 @@ class _MessagePageContentState extends State<MessagePageContent> {
     );
   }
 
-  Widget buildMessageList(List<MessageModel> messages) {
-    final theme = Theme.of(context);
-
-    return ListView.builder(
-      reverse: true,
-      itemCount: messages.length,
-      itemBuilder: (context, index) {
-        var messageModel = messages[messages.length - 1 - index];
-
-        bool isCurrentUser = messageModel.from != widget.id;
-
-        Color bubbleColor = isCurrentUser ? theme.colorScheme.primary : Colors.grey;
-        CrossAxisAlignment alignment = isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-          child: Column(
-            crossAxisAlignment: alignment,
-            children: [
-              Text(
-                isCurrentUser ? "moi" : widget.displayName,
-                style: const TextStyle(fontSize: 12.0),
-              ),
-              const SizedBox(height: 4.0),
-              Container(
-                padding: const EdgeInsets.all(12.0),
-                decoration: BoxDecoration(
-                  color: bubbleColor,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Text(
-                  messageModel.content,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  void _sendMessage() {
+    final bloc = context.read<MessageBloc>();
+    bloc.add(SendMessageEvent(
+      receiver: widget.id,
+      content: _messageController.text,
+    ));
+    _messageController.clear();
+    
   }
 }
